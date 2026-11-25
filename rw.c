@@ -13,11 +13,14 @@ sem_t rsem;        // to block readers (init at 1)
 volatile size_t current_readers = 0;
 volatile size_t current_writers = 0;
 
+int total_writes ;
+int total_reads ;
+
 
 
 void* reader(void* arg) {
     (void)arg;
-    while (1) {
+    for (int i = 0; i < total_reads; i++) {
         pthread_mutex_lock(&z);
         // only one reader waiting on rsem
         sem_wait(&rsem);
@@ -41,14 +44,14 @@ void* reader(void* arg) {
             sem_post(&wsem);  // last reader
         }
         pthread_mutex_unlock(&mutex_current_readers);
-        break;
+       
     }
     return (NULL);
 }
 
 void* writer(void* arg){
     (void)arg;
-    while (1) {
+    for (int i = 0; i < total_writes; i++) {
         pthread_mutex_lock(&mutex_current_writers);
         // critical section - current_writers
         current_writers++;
@@ -69,7 +72,7 @@ void* writer(void* arg){
             sem_post(&rsem);  // last writer
         }
         pthread_mutex_unlock(&mutex_current_writers);
-        break;
+        
     }
     return (NULL);
 }
@@ -84,6 +87,9 @@ int main(int argc, char *argv[])
     int nbr_r = atoi(argv[1]);
     int nbr_w = atoi(argv[2]);
 
+    total_writes = 6400 / nbr_w;
+    total_reads = 25400 / nbr_r;
+
     // Allocation dynamique des tableaux de threads en fonction des arguments
     pthread_t *readers = malloc(nbr_r * sizeof(pthread_t));
     pthread_t *writers = malloc(nbr_w * sizeof(pthread_t));
@@ -97,9 +103,9 @@ int main(int argc, char *argv[])
     for (int i = 0; i < nbr_w; i++)
         pthread_create(&writers[i], NULL, writer, NULL);
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < nbr_r; i++)
         pthread_join(readers[i], NULL);
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < nbr_w; i++)
         pthread_join(writers[i], NULL);
 
     // Destruction propre des sémaphores

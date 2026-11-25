@@ -11,10 +11,7 @@ int nb_philosophes;
 
 
 void mange(int id) {
-  printf("Philosophe [%d] mange\n",id);
-  for(int i=0;i< rand(); i++) {
-    // philosophe mange
-  }
+    (void)id;
 }
 
 void* philosophe ( void* arg )
@@ -22,7 +19,7 @@ void* philosophe ( void* arg )
   int *id=(int *) arg;
   int left = *id;
   int right = (left + 1) % nb_philosophes;
-  while(true) {
+  for (int c = 0; c < 1000000; c++) {
     // philosophe pense
     if(left<right) {
       pthread_mutex_lock(&baguette[left]);
@@ -35,7 +32,7 @@ void* philosophe ( void* arg )
     mange(*id);
     pthread_mutex_unlock(&baguette[left]);
     pthread_mutex_unlock(&baguette[right]);
-    usleep(500000); // simulation du temps de penser 
+     // philosophe pense 
   }
   return (NULL);
 }
@@ -67,9 +64,18 @@ int main(int argc, char *argv[])
         ids[i] = i;
         pthread_create(&phil[i], NULL, philosophe, &ids[i]);
     }
-    sleep(3);// les threads vient leurs vies
 
-    // Libération propre (même si dans un test simple le système le fait à la fermeture)
+    // Attendre tous les threads
+    for (int i = 0; i < nb_philosophes; i++) {
+        pthread_join(phil[i], NULL);
+    }
+    
+    // Destruction des mutex
+    for(int i = 0; i < nb_philosophes; i++) {
+        pthread_mutex_destroy(&baguette[i]);
+    }
+
+    // Libération propre 
     free(phil);
     free(baguette);
     free(ids);
